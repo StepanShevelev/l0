@@ -7,13 +7,19 @@ import (
 	mydb "github.com/StepanShevelev/l0/pkg/db"
 	"github.com/StepanShevelev/l0/pkg/pub"
 	"github.com/StepanShevelev/l0/pkg/sub"
+	"github.com/go-playground/validator/v10"
 	"github.com/sirupsen/logrus"
 	"net/http"
 	"os"
 	"os/signal"
 )
 
+var valid *validator.Validate
+
 func main() {
+
+	valid = validator.New()
+
 	config := cfg.New()
 	if err := config.Load("./configs", "config", "yml"); err != nil {
 		logrus.Fatal(err)
@@ -37,7 +43,7 @@ func main() {
 
 	pub.Publish()
 
-	sub.Connect()
+	sub.Connect(valid)
 
 	http.ListenAndServe(":"+config.Port, nil)
 

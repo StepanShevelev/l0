@@ -5,14 +5,18 @@ import (
 	"github.com/StepanShevelev/l0/pkg/api"
 	cfg "github.com/StepanShevelev/l0/pkg/config"
 	mydb "github.com/StepanShevelev/l0/pkg/db"
+	"github.com/go-playground/validator/v10"
 	"github.com/nats-io/nats.go"
 	"github.com/nats-io/stan.go"
 	"github.com/sirupsen/logrus"
+	"log"
 	"os"
 	"os/signal"
 )
 
-func Connect() {
+//var valid *validator.Validate
+
+func Connect(valid *validator.Validate) {
 	config := cfg.New()
 	if err := config.Load("./configs", "config", "yml"); err != nil {
 		logrus.Fatal(err)
@@ -37,7 +41,7 @@ func Connect() {
 
 	sub, err := sc.Subscribe("test", func(msg *stan.Msg) {
 
-		ProcessMessage(order, msg)
+		ProcessMessage(order, msg, valid)
 
 	}, stan.StartWithLastReceived())
 
@@ -60,13 +64,20 @@ func Connect() {
 
 }
 
-func ProcessMessage(order mydb.Order, msg *stan.Msg) {
+func ProcessMessage(order mydb.Order, msg *stan.Msg, valid *validator.Validate) {
 
 	err := json.Unmarshal(msg.Data, &order)
 	if err != nil {
-		logrus.Info("wrong data")
+		logrus.Error("wrong data")
 
 	}
+
+	err = valid.Struct(&order)
+	if err != nil {
+		log.Println("wrong data")
+		return
+	}
+
 	api.Caching.SetCache(order.OrderUID, order)
 
 	logrus.Info("message: ", msg)
