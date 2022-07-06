@@ -14,8 +14,6 @@ import (
 	"os/signal"
 )
 
-//var valid *validator.Validate
-
 func Connect(valid *validator.Validate) {
 	config := cfg.New()
 	if err := config.Load("./configs", "config", "yml"); err != nil {
